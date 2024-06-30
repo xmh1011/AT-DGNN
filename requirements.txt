@@ -1,0 +1,8 @@
+argparse
+torch~=2.0.1
+h5py~=3.10.0
+numpy~=1.25.2
+scikit-learn~=1.3.0
+scipy~=1.11.1
+
+einops~=0.7.0
