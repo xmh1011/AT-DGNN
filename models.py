@@ -1,11 +1,17 @@
 import os
 import math
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Function
 import config
 from einops.layers.torch import Rearrange
 import torch.nn.init as init
+from torch_geometric.nn import SGConv, global_add_pool
+from torch_geometric.nn import HeteroConv, GATConv, GCNConv, SAGEConv
+from torch_geometric.utils import trim_to_layer, dense_to_sparse
 
 _, os.environ['CUDA_VISIBLE_DEVICES'] = config.set_config()
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -545,6 +551,7 @@ class LGGNet(nn.Module):
         loss = F.cross_entropy(logits, labels) + self.weight_decay * l2_reg  # 将L2正则化项添加到损失函数中
         return loss
 
+
 class TSception(nn.Module):
     def conv_block(self, in_chan, out_chan, kernel, step, pool):
         return nn.Sequential(
@@ -564,9 +571,9 @@ class TSception(nn.Module):
         self.Tception2 = self.conv_block(1, num_T, (1, int(self.inception_window[1] * sampling_rate)), 1, self.pool)
         self.Tception3 = self.conv_block(1, num_T, (1, int(self.inception_window[2] * sampling_rate)), 1, self.pool)
 
-        self.Sception1 = self.conv_block(num_T, num_S, (int(input_size[1]), 1), 1, int(self.pool*0.25))
+        self.Sception1 = self.conv_block(num_T, num_S, (int(input_size[1]), 1), 1, int(self.pool * 0.25))
         self.Sception2 = self.conv_block(num_T, num_S, (int(input_size[1] * 0.5), 1), (int(input_size[1] * 0.5), 1),
-                                         int(self.pool*0.25))
+                                         int(self.pool * 0.25))
         self.fusion_layer = self.conv_block(num_S, num_S, (3, 1), 1, 4)
         self.BN_t = nn.BatchNorm2d(num_T)
         self.BN_s = nn.BatchNorm2d(num_S)
@@ -655,3 +662,455 @@ class GraphConvolution(nn.Module):
         output = torch.matmul(x, self.weight) - self.bias
         output = F.relu(torch.matmul(adj, output))
         return output
+
+
+class DepthwiseConv2d(nn.Module):
+    def __init__(self, in_channels, depth_multiplier, kernel_size, bias=False):
+        super(DepthwiseConv2d, self).__init__()
+        self.depth_multiplier = depth_multiplier
+        # depth_multiplier决定了每个输入通道应该扩展到多少个输出通道
+        self.depthwise = nn.Conv2d(
+            in_channels, in_channels * depth_multiplier, kernel_size=kernel_size,
+            groups=in_channels, bias=bias, padding=0  # 设置padding为0来减少高度
+        )
+
+    def forward(self, x):
+        return self.depthwise(x)
+
+
+class ATC_Conv(nn.Module):
+    def __init__(self, n_channel, in_channels, F1, D, KC, P2, dropout=0.3):
+        super(ATC_Conv, self).__init__()
+        F2 = F1 * D  # Output dimension
+        # 第一层常规卷积: 时间卷积层
+        self.temporal_conv = nn.Conv2d(in_channels, F1, (1, KC), padding='same', bias=False)
+        self.batchnorm1 = nn.BatchNorm2d(F1)
+        self.elu = nn.ELU()
+        self.dropout1 = nn.Dropout(dropout)
+        # 第二层卷积: 深度卷积层
+        self.depthwise_conv = DepthwiseConv2d(in_channels=F1, depth_multiplier=D, kernel_size=(n_channel, 1))
+        self.batchnorm2 = nn.BatchNorm2d(F1 * D)
+        self.avgpool1 = nn.AvgPool2d((1, 8))
+        self.dropout2 = nn.Dropout(dropout)
+        # 第三层卷积
+        self.spatial_conv = nn.Conv2d(F1 * D, F2, (1, KC), padding='same', bias=False)  # 修改核的尺寸以适配 KC
+        self.batchnorm3 = nn.BatchNorm2d(F2)
+        self.avgpool2 = nn.AvgPool2d((1, P2))  # 池化尺寸由P2控制
+        self.dropout3 = nn.Dropout(dropout)
+
+    def forward(self, x):
+        # 时间卷积
+        x = self.temporal_conv(x)
+        x = self.batchnorm1(x)
+        x = self.elu(x)
+        x = self.dropout1(x)
+        # 深度卷积
+        x = self.depthwise_conv(x)
+        x = self.batchnorm2(x)
+        x = self.elu(x)
+        x = self.avgpool1(x)
+        x = self.dropout2(x)
+        # 空间卷积
+        x = self.spatial_conv(x)
+        x = self.batchnorm3(x)
+        x = self.elu(x)
+        x = self.avgpool2(x)
+        x = self.dropout3(x)
+        return x
+
+
+class ATCNet(nn.Module):
+    def __init__(self, input_size, n_channel, n_classes, n_windows=8,
+                 eegn_F1=24, eegn_D=2, eegn_kernelSize=50, eegn_poolSize=8, eegn_dropout=0.3, num_heads=2,
+                 tcn_depth=2, tcn_kernelSize=4, tcn_filters=32, tcn_dropout=0.3, fuse='average',
+                 activation='elu'):
+        super(ATCNet, self).__init__()
+        self.n_windows = n_windows
+        self.conv_block = ATC_Conv(n_channel, 1, eegn_F1, eegn_D, eegn_kernelSize, eegn_poolSize, eegn_dropout)
+        self.fuse = fuse
+
+        in_channels = [eegn_F1 * eegn_D] + (tcn_depth - 1) * [tcn_filters]
+        dilations = [2 ** i for i in range(tcn_depth)]
+
+        self.attention_block = MultiHeadSelfAttention(eegn_F1 * eegn_D, num_heads)
+
+        self.tcn_blocks = nn.ModuleList([
+            _TCNBlock(in_ch, tcn_filters, kernel_size=tcn_kernelSize, dilation=dilation,
+                      dropout=tcn_dropout, activation=activation)
+            for in_ch, dilation in zip(in_channels, dilations)
+        ])
+        self.fuse_layer = nn.Linear(tcn_filters, n_classes)
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):  # (64,1,32,800)
+        x = self.conv_block(x)  # (64,100,1,12)
+        x = torch.flatten(x, start_dim=2)  # Flatten the channel and height dimensions (64,100,12)
+
+        outputs = []
+        for i in range(self.n_windows):
+            windows_data = x[:, :, i:x.shape[2] - self.n_windows + i + 1]  # Sliding window
+            # Attention block
+            tcn_input = self.attention_block(windows_data)  # (batch_size, channels, T_w)
+            for blk in self.tcn_blocks:
+                tcn_output = blk(tcn_input)
+                tcn_input = tcn_output
+            # (64,32,5)
+            tcn_output = tcn_output[:, :, -1]  # Last timestep
+            outputs.append(tcn_output)
+        # (64,32)
+        if self.fuse == 'average':
+            output = torch.mean(torch.stack(outputs, dim=1), dim=1)
+        elif self.fuse == 'concat':
+            output = torch.cat(outputs, dim=1)
+        else:
+            raise ValueError("Invalid fuse method")
+
+        output = self.fuse_layer(output)
+        output = self.softmax(output)
+        return output
+
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super(MultiHeadSelfAttention, self).__init__()
+        self.num_heads = num_heads
+        self.d_model = d_model
+        self.d_k = d_model // num_heads
+
+        self.query_linear = nn.Linear(d_model, d_model)
+        self.key_linear = nn.Linear(d_model, d_model)
+        self.value_linear = nn.Linear(d_model, d_model)
+        self.out_linear = nn.Linear(d_model, d_model)
+        self.layer_norm = nn.LayerNorm(d_model)
+
+    def forward(self, x):
+        batch_size, d, T_w = x.size()
+
+        # Permute to (batch_size, T_w, d)
+        x = x.permute(0, 2, 1)
+
+        # Linear transformations
+        Q = self.query_linear(x)  # (batch_size, T_w, d_model)
+        K = self.key_linear(x)  # (batch_size, T_w, d_model)
+        V = self.value_linear(x)  # (batch_size, T_w, d_model)
+
+        # Reshape for multi-head attention
+        Q = Q.view(batch_size, T_w, self.num_heads, self.d_k).transpose(1, 2)  # (batch_size, num_heads, T_w, d_k)
+        K = K.view(batch_size, T_w, self.num_heads, self.d_k).transpose(1, 2)  # (batch_size, num_heads, T_w, d_k)
+        V = V.view(batch_size, T_w, self.num_heads, self.d_k).transpose(1, 2)  # (batch_size, num_heads, T_w, d_k)
+
+        # Scaled dot-product attention
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.d_k ** 0.5)  # (batch_size, num_heads, T_w, T_w)
+        attention_weights = F.softmax(scores, dim=-1)  # (batch_size, num_heads, T_w, T_w)
+        context = torch.matmul(attention_weights, V)  # (batch_size, num_heads, T_w, d_k)
+
+        # Concatenate heads
+        context = context.transpose(1, 2).contiguous().view(batch_size, T_w, self.d_model)  # (batch_size, T_w, d_model)
+
+        # Final linear transformation
+        output = self.out_linear(context)  # (batch_size, T_w, d_model)
+        output = self.layer_norm(output + x)  # Add & Norm
+
+        # Permute back to (batch_size, d, T_w)
+        output = output.permute(0, 2, 1)
+
+        return output
+
+
+# class ReverseLayerF(Function):
+#     @staticmethod
+#     def forward(ctx, x, alpha):
+#         ctx.alpha = alpha
+#         return x.view_as(x)
+#
+#     @staticmethod
+#     def backward(ctx, grad_output):
+#         output = grad_output.neg() * ctx.alpha
+#         return output, None
+#
+# class RGNN(nn.Module):
+#     def __init__(self, input_size, batch_size, K, num_class, weight, num_hidden=30, dropout=0.3, domain_adaptation=0):
+#         super(RGNN, self).__init__()
+#         self.conv = SGConv(input_size[2], num_hidden, K)
+#         self.fc = nn.Linear(num_hidden, num_class)
+#         self.domain_adaptation = domain_adaptation
+#         self.dropout = dropout
+#         self.alpha = domain_adaptation
+#         self.num_nodes = input_size[1]
+#         self.batch_size = batch_size
+#         self.weight = nn.Parameter(weight, requires_grad=True)
+#         if self.domain_adaptation == 1:
+#             self.domain_classifier = nn.Linear(num_hidden, 2)
+#
+#         # 生成 edge_index 和 batch
+#         self.edge_index = self.generate_edge_index().to(DEVICE)
+#         self.batch = self.generate_batch_indices().to(DEVICE)
+#
+#     # def generate_edge_index(self):
+#     #     # 生成一个完全连接图的边索引，并考虑批次大小
+#     #     row = torch.arange(self.num_nodes).repeat_interleave(self.num_nodes)
+#     #     col = torch.arange(self.num_nodes).repeat(self.num_nodes)
+#     #     edge_index = torch.stack([row, col], dim=0)
+#     #
+#     #     edge_index_list = []
+#     #     for i in range(self.batch_size):
+#     #         edge_index_batch = edge_index + i * self.num_nodes
+#     #         edge_index_list.append(edge_index_batch)
+#     #     edge_index = torch.cat(edge_index_list, dim=1)
+#     #     return edge_index
+#
+#     def generate_edge_index(self):
+#         # 生成一个完全连接图的边索引
+#         row = torch.arange(self.num_nodes).repeat_interleave(self.num_nodes)
+#         col = torch.arange(self.num_nodes).repeat(self.num_nodes)
+#         edge_index = torch.stack([row, col], dim=0)
+#         return edge_index
+#
+#     def generate_batch_indices(self):
+#         # 生成批处理索引
+#         return torch.arange(self.batch_size).repeat_interleave(self.num_nodes)
+#
+#     def forward(self, x):
+#         # 确保输入形状为 (batch_size, num_nodes, num_features)
+#         x = x.squeeze(1)  # 结果形状为 (64, 32, 800)
+#         # 将 x 展平为 (batch_size * num_nodes, num_features)
+#         x = x.view(-1, x.size(-1))
+#
+#         # # 生成批处理的边权重
+#         # edge_weight = self.weight.view(-1).repeat(self.batch_size)
+#         # 生成批处理的边权重，不需要在这里重复边权重
+#         edge_weight = self.weight
+#
+#         x = self.conv(x, self.edge_index, edge_weight)
+#         x = F.relu(x)
+#
+#         x = global_add_pool(x, self.batch)
+#         x = F.dropout(x, p=self.dropout, training=self.training)
+#         x = self.fc(x)
+#         x = F.softmax(x, dim=1)
+#         return x
+
+
+class RGNN(nn.Module):
+    def __init__(self, input_size, batch_size, K, num_class, num_hidden=30, dropout=0.3):
+        super(RGNN, self).__init__()
+        self.conv = SGConv(input_size[2], num_hidden, K)
+        self.ln1 = nn.LayerNorm(num_hidden)  # 使用LayerNorm
+        self.fc = nn.Linear(num_hidden, num_class)
+        self.dropout = dropout
+        self.num_nodes = input_size[1]
+        self.batch_size = batch_size
+        self.edge_index = None
+        self.register_parameter('edge_weight', nn.Parameter(torch.zeros((self.num_nodes * self.num_nodes,))))
+
+    def forward(self, x):
+        x = x.squeeze(1)
+        if self.edge_index is None:
+            processor = AdjacencyProcessor()
+            self.edge_index, weight = processor.process_batch(x)
+            self.edge_weight = nn.Parameter(weight)
+
+        x = self.conv(x, self.edge_index, self.edge_weight)
+        x = self.ln1(x)  # Apply BatchNorm
+        x = F.sigmoid(x)
+
+        # # 将每个batch看作来自不同的图，报错：RuntimeError: The expanded size of the tensor (32) must match the existing size (2048) at non-singleton dimension 1.  Target sizes: [64, 32, 300].  Tensor sizes: [1, 2048, 1]
+        x = global_add_pool(x, batch=None)
+
+        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = self.fc(x)
+        out = F.softmax(x, dim=1)
+        out = out.squeeze(1)
+
+        return out
+
+
+class AdjacencyProcessor:
+    def __init__(self, device=DEVICE):
+        self.device = device
+
+    def normalize_features(self, x):
+        """
+        对输入特征进行归一化处理
+        x: (b, node, feature)
+        返回: 归一化后的特征矩阵 (b, node, feature)
+        """
+        mean = x.mean(dim=2, keepdim=True)
+        std = x.std(dim=2, keepdim=True) + 1e-6
+        return (x - mean) / std
+
+    def compute_similarity(self, x):
+        """
+        计算输入特征矩阵 x 的余弦相似度矩阵。
+        x: (b, node, feature)
+        返回: (b, node, node)
+        """
+        x = F.normalize(x, p=2, dim=2)  # 对每个特征向量进行L2归一化
+        x_ = x.permute(0, 2, 1)  # 调整维度顺序为 (b, feature, node)
+        s = torch.bmm(x, x_)  # 计算余弦相似度矩阵 (b, node, node)
+        s = (s + 1) / 2  # 将相似度从 [-1, 1] 转换到 [0, 1]
+        return s
+
+    def normalize_adjacency_matrix(self, x):
+        """
+        归一化邻接矩阵。
+        x：输入的特征矩阵，大小为(b, node, feature)。
+        返回值：归一化后的邻接矩阵，大小为(b, node, node)。
+        """
+        # 计算自相似度矩阵
+        adj = self.compute_similarity(x)  # (b, node, node)
+
+        num_nodes = adj.shape[-1]
+        # 加入自环
+        adj = adj + torch.eye(num_nodes).to(DEVICE)
+        # 计算度矩阵
+        rowsum = torch.sum(adj, dim=-1)  # 计算度矩阵
+        # 避免除以0
+        mask = torch.zeros_like(rowsum)
+        mask[rowsum == 0] = 1
+        rowsum += mask
+        # 计算度矩阵的逆平方根
+        d_inv_sqrt = torch.pow(rowsum, -0.5)  # (b, node)
+        # 将逆平方根转换为对角矩阵
+        d_mat_inv_sqrt = torch.diag_embed(d_inv_sqrt)  # (b, node, node)
+        # 归一化邻接矩阵
+        adj = torch.bmm(torch.bmm(d_mat_inv_sqrt, adj), d_mat_inv_sqrt)  # (b, node, node)
+        return adj
+
+    def process_batch(self, x_batch):
+        """
+        处理输入批次的特征矩阵 x_batch，返回相应的 edge_index 和 edge_weight。
+        x_batch：大小为(b, node, feature)的输入特征矩阵。
+        返回：
+        - edge_index：大小为 (2, num_edges) 的张量。
+        - edge_weight：大小为 (num_edges,) 的张量。
+        """
+        # 归一化邻接矩阵
+        adj = self.normalize_adjacency_matrix(x_batch)  # (b, node, node)
+
+        edge_index, edge_weight = dense_to_sparse(adj[0])
+
+        return edge_index, edge_weight
+
+
+class DynamicGraphConv(nn.Module):
+
+    def __init__(self, num_in, num_out, bias=False):
+
+        super(DynamicGraphConv, self).__init__()
+
+        self.num_in = num_in
+        self.num_out = num_out
+        # self.weight = nn.Parameter(torch.FloatTensor(num_in, num_out).cuda())   #Pytorch nn.Parameter() 创建模型可训练参数  https://blog.csdn.net/hxxjxw/article/details/107904012
+        # torch.FloatTensor(a,b)   随机生成aXb格式的tensor
+
+        self.weight = nn.Parameter(torch.FloatTensor(num_in, num_out))
+        nn.init.xavier_normal_(self.weight)  # 大致就是使可训练参数服从正态分布
+        self.bias = None
+        if bias:
+            # self.bias = nn.Parameter(torch.FloatTensor(num_out).cuda())
+            self.bias = nn.Parameter(torch.FloatTensor(num_out))
+            nn.init.zeros_(self.bias)  # 有偏置 则置为0
+
+    def forward(self, x, adj):
+        out = torch.matmul(adj, x)  # 矩阵/向量 乘法
+        out = torch.matmul(out, self.weight)
+        if self.bias is not None:
+            return out + self.bias
+        else:
+            return out
+
+
+class Linear(nn.Module):
+    def __init__(self, in_features, out_features, bias=True):
+        super(Linear, self).__init__()
+        self.linear = nn.Linear(in_features, out_features, bias=bias)
+        nn.init.xavier_normal_(self.linear.weight)
+        if bias:
+            nn.init.zeros_(self.linear.bias)
+
+    def forward(self, inputs):
+        return self.linear(inputs)
+
+
+class Chebynet(nn.Module):
+    def __init__(self, xdim, K, num_out):
+        super(Chebynet, self).__init__()
+        self.K = K
+        self.gc1 = nn.ModuleList()  # https://zhuanlan.zhihu.com/p/75206669
+        for i in range(K):
+            self.gc1.append(DynamicGraphConv(xdim[2], num_out))
+
+    def generate_cheby_adj(self,A, K, device):
+        support = []
+        for i in range(K):
+            if i == 0:
+                # support.append(torch.eye(A.shape[1]).cuda())  #torch.eye生成单位矩阵
+                temp = torch.eye(A.shape[1])
+                temp = temp.to(device)
+                support.append(temp)
+            elif i == 1:
+                support.append(A)
+            else:
+                temp = torch.matmul(support[-1], A)
+                support.append(temp)
+        return support
+
+    def forward(self, x, L):
+        device = x.device
+        adj = self.generate_cheby_adj(L, self.K, device)
+        for i in range(len(self.gc1)):
+            if i == 0:
+                result = self.gc1[i](x, adj[i])
+            else:
+                result += self.gc1[i](x, adj[i])
+        result = F.relu(result)
+        return result
+
+
+class DGCNN(nn.Module):
+    def __init__(self, input_size, batch_size, k_adj, num_out=64, nclass=2):
+        # xdim: (batch_size*num_nodes*num_features_in)
+        # k_adj: num_layers
+        # num_out: num_features_out
+        super(DGCNN, self).__init__()
+        self.batch_size = batch_size
+        xdim = [batch_size] + list(input_size)
+        xdim.pop(1)
+        self.K = k_adj
+        self.layer1 = Chebynet(xdim, k_adj, num_out)
+        self.BN1 = nn.BatchNorm1d(xdim[2])  # 对第二维（第一维为batch_size)进行标准化
+        self.fc1 = Linear(xdim[1] * num_out, 32)
+        # self.fc2=Linear(64, 32)
+        self.fc3 = Linear(32, 8)
+        self.fc4 = Linear(8, nclass)
+        # self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]).cuda())
+        self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]))
+        nn.init.xavier_normal_(self.A)
+
+    def normalize_A(self, A, symmetry=False):
+        A = F.relu(A)
+        if symmetry:
+            A = A + torch.transpose(A, 0, 1)  # A+ A的转置
+            d = torch.sum(A, 1)  # 对A的第1维度求和
+            d = 1 / torch.sqrt(d + 1e-10)  # d的-1/2次方
+            D = torch.diag_embed(d)
+            L = torch.matmul(torch.matmul(D, A), D)
+        else:
+            d = torch.sum(A, 1)
+            d = 1 / torch.sqrt(d + 1e-10)
+            D = torch.diag_embed(d)
+            L = torch.matmul(torch.matmul(D, A), D)
+        return L
+
+    def forward(self, x):
+        x = x.squeeze(1)
+        x = self.BN1(x.transpose(1, 2)).transpose(1, 2)  # 因为第三维 才为特征维度
+        L = self.normalize_A(self.A)  # A是自己设置的59 * 59的可训练参数  及邻接矩阵
+        result = self.layer1(x, L)
+        result = result.reshape(x.shape[0], -1)
+        result = F.relu(self.fc1(result))
+        # result=F.relu(self.fc2(result))
+        result = F.relu(self.fc3(result))
+        result = self.fc4(result)
+        return result
