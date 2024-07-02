@@ -21,18 +21,19 @@ def set_config():
 
     # Training Process
     parser.add_argument('--fold', type=int, default=10)
-    parser.add_argument('--random-seed', type=int, default=3407)
+    random_deed = [2048, 3199, 3090, 2524, 3709]
+    parser.add_argument('--random-seed', type=int, default=random_deed[time])
     parser.add_argument('--max-epoch', type=int, default=200)
-    parser.add_argument('--patient', type=int, default=20)  # 早停 最开始为20
-    parser.add_argument('--patient-cmb', type=int, default=8)  # 原始值为8
-    parser.add_argument('--max-epoch-cmb', type=int, default=20)  # 最大迭代次数 原始值为20
+    parser.add_argument('--patient', type=int, default=40)  # 早停 最开始为20
+    parser.add_argument('--patient-cmb', type=int, default=10)  # 原始值为8
+    parser.add_argument('--max-epoch-cmb', type=int, default=40)  # 最大迭代次数 原始值为20
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--learning-rate', type=float, default=1e-3)  # 学习率 原始值为1e-3
     parser.add_argument('--training-rate', type=float, default=0.8)
     parser.add_argument('--weight-decay', type=float, default=0.001)  # 权重衰减
     parser.add_argument('--step-size', type=int, default=5)
-    parser.add_argument('--dropout', type=float, default=0.5)
-    parser.add_argument('--LS', type=bool, default=True, help="Label smoothing")
+    parser.add_argument('--dropout', type=float, default=0.5)  # 原始0.5
+    parser.add_argument('--LS', type=bool, default=True, help="Label smoothing")  # 原始值为True
     parser.add_argument('--LS-rate', type=float, default=0.1)
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--balance', type=bool, default=False)
@@ -42,13 +43,14 @@ def set_config():
     parser.add_argument('--load-path-final', default='./save/final_model.pth')
     parser.add_argument('--save-model', type=bool, default=True)
     # Model Parameters
-    parser.add_argument('--model', type=str, default='DeepConvNet',
-                        choices=['LGGNet', 'AT-DGNN', 'EEGNet', 'DeepConvNet', 'ShallowConvNet', 'EEGTCNet',
-                                 'TSception', 'TCNet-Fusion'])
+    parser.add_argument('--model', type=str, default='DGCNN',
+                        choices=['LGGNet', 'ATDCGN', 'EEGNet', 'DeepConvNet', 'ShallowConvNet', 'EEGTCNet',
+                                 'EEGNetClassifier', 'TSception', 'TCNet_Fusion', 'TSception', 'ATCNet', 'RGNN',
+                                 'DGCNN'])
     parser.add_argument('--pool', type=int, default=16)
     parser.add_argument('--pool-step-rate', type=float, default=0.25)
     parser.add_argument('--T', type=int, default=64)
-    parser.add_argument('--graph-type', type=str, default='BL', choices=['fro', 'gen', 'hem', 'BL'])
+    parser.add_argument('--graph-type', type=str, default='fro', choices=['fro', 'gen', 'hem', 'BL'])
     parser.add_argument('--hidden', type=int, default=32)  # 隐藏层
 
     # Reproduce the result using the saved model

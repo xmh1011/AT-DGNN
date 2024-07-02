@@ -79,9 +79,8 @@ def pprint(x):
 
 
 def get_model(args):
-
     idx_local_graph = 0
-    if args.model == 'LGGNet' or args.model == 'AT-DGNN':
+    if args.model == 'LGGNet' or args.model == 'ATDCGN':
         idx_local_graph = list(np.array(h5py.File('num_chan_local_graph_{}.hdf'.format(args.graph_type), 'r')['data']))
     if args.model == 'LGGNet':
         model = LGGNet(
@@ -91,8 +90,8 @@ def get_model(args):
             dropout_rate=args.dropout,
             pool=args.pool, pool_step_rate=args.pool_step_rate,
             idx_graph=idx_local_graph)
-    elif args.model == 'AT-DGNN':
-        model = ATDGNN(
+    elif args.model == 'ATDCGN':
+        model = ATDCGN(
             num_classes=args.num_class, input_size=args.input_shape,
             sampling_rate=args.target_rate,
             num_T=args.T, out_graph=args.hidden,
@@ -101,7 +100,8 @@ def get_model(args):
             idx_graph=idx_local_graph)
     elif args.model == 'EEGNet':
         model = EEGNet(
-            n_classes=args.num_class, channels=args.channels, sampling_rate=args.target_rate, input_size=args.input_shape,
+            n_classes=args.num_class, channels=args.channels, sampling_rate=args.target_rate,
+            input_size=args.input_shape,
             kernLength=0.25 * args.target_rate
         )
     elif args.model == 'DeepConvNet':
@@ -115,14 +115,24 @@ def get_model(args):
     elif args.model == 'EEGTCNet':
         model = EEGTCNet(
             n_classes=args.num_class, in_channels=args.channels, kernLength=int(args.target_rate * 0.25))
-    elif args.model == 'TCNet-Fusion':
+    elif args.model == 'TCNet_Fusion':
         model = TCNet_Fusion(
-            input_size=args.input_shape, n_classes=args.num_class, channels=args.channels, sampling_rate=args.target_rate)
+            input_size=args.input_shape, n_classes=args.num_class, channels=args.channels,
+            sampling_rate=args.target_rate)
     elif args.model == "TSception":
         model = TSception(
             input_size=args.input_shape, num_classes=args.num_class, sampling_rate=args.target_rate,
             num_T=args.T, num_S=args.T, hidden=args.hidden, dropout_rate=args.dropout)
-
+    elif args.model == "ATCNet":
+        # kernelSize为采样率的四分之一，和F1重复了
+        model = ATCNet(input_size=args.input_shape, n_channel=args.channels, n_classes=args.num_class,
+                       eegn_F1=50, eegn_D=2, eegn_kernelSize=50,
+                       tcn_depth=2, activation='elu')
+    elif args.model == "RGNN":
+        model = RGNN(input_size=args.input_shape, batch_size=args.batch_size, K=3, num_class=2,
+                     num_hidden=300, dropout=0.5)
+    elif args.model == "DGCNN":
+        model = DGCNN(input_size=args.input_shape, batch_size=args.batch_size, k_adj=40, num_out=64, nclass=2)
     return model
 
 

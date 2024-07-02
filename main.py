@@ -2,8 +2,8 @@ from cross_validation import *
 from prepare_data import *
 
 
-def main():
-    args, _ = config.set_config()
+def main(time):
+    args, _ = config.set_config(time=time)
     sub_to_run = np.arange(args.subjects)
     pd = PrepareData(args)
     pd.run(sub_to_run, split=True, expand=True)
@@ -14,4 +14,4 @@ def main():
 
 if __name__ == '__main__':
     for i in range(5):
-        main()
+        main(i)
