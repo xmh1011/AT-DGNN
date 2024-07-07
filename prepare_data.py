@@ -279,27 +279,6 @@ class PrepareData:
             data = self.extract_features(data, sampling_rate)
         return data, label
 
-    # def extract_channel_features(self,channel_data, sfreq, bands):
-    #     features = []
-    #     for band, (low, high) in bands.items():
-    #         filtered = self.bandpass_filter(channel_data, low, high, sfreq)
-    #         de = np.log(np.mean(np.abs(filtered) ** 2))  # Simplified DE calculation
-    #         psd = np.mean(np.abs(filtered) ** 2)  # Power Spectral Density (PSD)
-    #         dasm = np.mean(filtered)  # Differential Asymmetry (DASM)
-    #         rasm = np.mean(filtered)  # Rational Asymmetry (RASM)
-    #         dcau = np.mean(filtered)  # Differential Causality (DCAU)
-    #         features.extend([de, psd, dasm, rasm, dcau])
-    #     return features
-    #
-    # def extract_segment_features(self, segment_data, sfreq, bands):
-    #     num_channels = segment_data.shape[0]
-    #     segment_features = []
-    #     for channel in range(num_channels):
-    #         channel_data = segment_data[channel, :]
-    #         features = self.extract_channel_features(channel_data, sfreq, bands)
-    #         segment_features.append(features)
-    #     return segment_features
-
     def extract_features(self, data, sfreq):
         # data 的形状应该是 (20, 14, 1, 32, 800)
         num_trials, num_segments, _, num_channels, num_samples = data.shape
@@ -368,33 +347,6 @@ class PrepareData:
         b, a = signal.butter(order, [low, high], btype='bandpass')
         filtered_data = signal.filtfilt(b, a, data, axis=-1)
         return filtered_data
-
-    # 使用ica方法伪影去除
-    def remove_eye_artifact(self, data):
-        """
-        This function removes the eye artifact using ICA
-        Parameters
-        ----------
-        data: (trial, channel, data)
-
-        Returns
-        -------
-        data: (trial, channel, data)
-        """
-        for i in range(data.shape[0]):
-            for j in range(2):
-                data[i, j, :] = self.remove_eye_artifact_per_channel(data[i, j, :])
-        return data
-
-    def remove_eye_artifact_per_channel(self, data):
-        """
-        This function removes the eye artifact using ICA
-        @param data:
-        @return:
-        """
-        ica = FastICA(n_components=32, random_state=0)
-        data = ica.fit_transform(data)
-        return data
 
     # 频率为50hz的陷波滤波器
     def notch_filter(self, data, fs, Q=50):

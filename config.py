@@ -5,7 +5,7 @@ def set_config():
     parser = argparse.ArgumentParser()
     # Data
     parser.add_argument('--dataset', type=str, default='MEEG', choices=['MEEG', 'DEAP'])
-    parser.add_argument('--data-path', type=str, default='/data/xiaominghao/eeg-data')
+    parser.add_argument('--data-path', type=str, default='/home/data/eeg-data')
     parser.add_argument('--subjects', type=int, default=32)
     parser.add_argument('--num-class', type=int, default=2, choices=[2, 3, 4])
     parser.add_argument('--label-type', type=str, default='A', choices=['A', 'V', 'D', 'L'])
@@ -22,7 +22,7 @@ def set_config():
     # Training Process
     parser.add_argument('--fold', type=int, default=10)
     random_deed = [2048, 3199, 3090, 2524, 3709]
-    parser.add_argument('--random-seed', type=int, default=random_deed[time])
+    parser.add_argument('--random-seed', type=int, default=3407)
     parser.add_argument('--max-epoch', type=int, default=200)
     parser.add_argument('--patient', type=int, default=40)  # 早停 最开始为20
     parser.add_argument('--patient-cmb', type=int, default=10)  # 原始值为8
@@ -43,7 +43,7 @@ def set_config():
     parser.add_argument('--load-path-final', default='./save/final_model.pth')
     parser.add_argument('--save-model', type=bool, default=True)
     # Model Parameters
-    parser.add_argument('--model', type=str, default='DGCNN',
+    parser.add_argument('--model', type=str, default='ATDCGN',
                         choices=['LGGNet', 'ATDCGN', 'EEGNet', 'DeepConvNet', 'ShallowConvNet', 'EEGTCNet',
                                  'EEGNetClassifier', 'TSception', 'TCNet_Fusion', 'TSception', 'ATCNet', 'RGNN',
                                  'DGCNN'])
