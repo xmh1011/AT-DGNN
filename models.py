@@ -12,6 +12,7 @@ import torch.nn.init as init
 from torch_geometric.nn import SGConv, global_add_pool
 from torch_geometric.nn import HeteroConv, GATConv, GCNConv, SAGEConv
 from torch_geometric.utils import trim_to_layer, dense_to_sparse
+import scipy.signal
 
 _, os.environ['CUDA_VISIBLE_DEVICES'] = config.set_config()
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -1005,7 +1006,7 @@ class DynamicGraphConv(nn.Module):
         # torch.FloatTensor(a,b)   随机生成aXb格式的tensor
 
         self.weight = nn.Parameter(torch.FloatTensor(num_in, num_out))
-        nn.init.xavier_normal_(self.weight)  # 大致就是使可训练参数服从正态分布
+        nn.init.xavier_normal_(self.weight, gain=1.414)  # 大致就是使可训练参数服从正态分布
         self.bias = None
         if bias:
             # self.bias = nn.Parameter(torch.FloatTensor(num_out).cuda())
@@ -1041,7 +1042,7 @@ class Chebynet(nn.Module):
         for i in range(K):
             self.gc1.append(DynamicGraphConv(xdim[2], num_out))
 
-    def generate_cheby_adj(self,A, K, device):
+    def generate_cheby_adj(self, A, K, device):
         support = []
         for i in range(K):
             if i == 0:
@@ -1075,8 +1076,8 @@ class DGCNN(nn.Module):
         # num_out: num_features_out
         super(DGCNN, self).__init__()
         self.batch_size = batch_size
-        xdim = [batch_size] + list(input_size)
-        xdim.pop(1)
+        xdim = [batch_size] + [32, 5]
+        # xdim.pop(1)
         self.K = k_adj
         self.layer1 = Chebynet(xdim, k_adj, num_out)
         self.BN1 = nn.BatchNorm1d(xdim[2])  # 对第二维（第一维为batch_size)进行标准化
@@ -1084,8 +1085,8 @@ class DGCNN(nn.Module):
         # self.fc2=Linear(64, 32)
         self.fc3 = Linear(32, 8)
         self.fc4 = Linear(8, nclass)
-        # self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]).cuda())
-        self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]))
+        self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]).cuda())
+        # self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]))
         nn.init.xavier_normal_(self.A)
 
     def normalize_A(self, A, symmetry=False):
@@ -1106,7 +1107,7 @@ class DGCNN(nn.Module):
     def forward(self, x):
         x = x.squeeze(1)
         x = self.BN1(x.transpose(1, 2)).transpose(1, 2)  # 因为第三维 才为特征维度
-        L = self.normalize_A(self.A)  # A是自己设置的59 * 59的可训练参数  及邻接矩阵
+        L = self.normalize_A(self.A)  # A是自己设置的可训练参数及邻接矩阵
         result = self.layer1(x, L)
         result = result.reshape(x.shape[0], -1)
         result = F.relu(self.fc1(result))
@@ -1114,3 +1115,4 @@ class DGCNN(nn.Module):
         result = F.relu(self.fc3(result))
         result = self.fc4(result)
         return result
+
