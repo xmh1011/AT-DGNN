@@ -3,10 +3,12 @@ from scipy import signal
 from sklearn.decomposition import FastICA
 from train_model import *
 from scipy.signal import resample
+import scipy.signal
 from torch.utils.data import Dataset
 import os
 import numpy as np
 import h5py
+import concurrent.futures
 
 
 class eegDataset(Dataset):
@@ -239,9 +241,7 @@ class PrepareData:
                 target_rate=self.args.target_rate)
 
         if split:
-            data, label = self.split(
-                data=data, label=label, segment_length=self.args.segment,
-                overlap=self.args.overlap, sampling_rate=self.args.target_rate)
+            data, label = self.split(data, label, self.args.segment, self.args.overlap, self.args.target_rate)
 
         return data, label
 
@@ -275,7 +275,58 @@ class PrepareData:
             label.shape))
         data = data_split_array
         assert len(data) == len(label)
+        if self.args.model == 'DGCNN':
+            data = self.extract_features(data, sampling_rate)
         return data, label
+
+    # def extract_channel_features(self,channel_data, sfreq, bands):
+    #     features = []
+    #     for band, (low, high) in bands.items():
+    #         filtered = self.bandpass_filter(channel_data, low, high, sfreq)
+    #         de = np.log(np.mean(np.abs(filtered) ** 2))  # Simplified DE calculation
+    #         psd = np.mean(np.abs(filtered) ** 2)  # Power Spectral Density (PSD)
+    #         dasm = np.mean(filtered)  # Differential Asymmetry (DASM)
+    #         rasm = np.mean(filtered)  # Rational Asymmetry (RASM)
+    #         dcau = np.mean(filtered)  # Differential Causality (DCAU)
+    #         features.extend([de, psd, dasm, rasm, dcau])
+    #     return features
+    #
+    # def extract_segment_features(self, segment_data, sfreq, bands):
+    #     num_channels = segment_data.shape[0]
+    #     segment_features = []
+    #     for channel in range(num_channels):
+    #         channel_data = segment_data[channel, :]
+    #         features = self.extract_channel_features(channel_data, sfreq, bands)
+    #         segment_features.append(features)
+    #     return segment_features
+
+    def extract_features(self, data, sfreq):
+        # data 的形状应该是 (20, 14, 1, 32, 800)
+        num_trials, num_segments, _, num_channels, num_samples = data.shape
+        bands = {
+            'delta': (1, 4),
+            'theta': (4, 8),
+            'alpha': (8, 14),
+            'beta': (14, 31),
+            'gamma': (31, 50)
+        }
+        # 初始化输出数据结构
+        features = np.zeros((num_trials, num_segments, 1, num_channels, len(bands)))
+
+        # 遍历每个频带并应用滤波器
+        for i, (band_name, band_range) in enumerate(bands.items()):
+            for trial in range(num_trials):
+                for segment in range(num_segments):
+                    for channel in range(num_channels):
+                        # 获取单个通道数据
+                        channel_data = data[trial, segment, 0, channel, :]
+                        # 应用带通滤波器
+                        filtered_data = self.bandpass_filter(channel_data, band_range[0], band_range[1], sfreq)
+                        # 计算差分熵
+                        features[trial, segment, 0, channel, i] = np.log(np.var(filtered_data) + 1e-8)
+
+        # 输出数据结构应该为 (20, 14, 1, 32, 5)
+        return features
 
     def downsample_data(self, data, label, sampling_rate, target_rate):
         """
