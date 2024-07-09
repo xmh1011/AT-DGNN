@@ -17,5 +17,13 @@ AT-DGNN model consists of two core modules: a feature extraction module and a dy
 If you find our work useful, please consider citing our paper:
 
 ```
-
+@misc{xiao2024meegatdgnnadvancingeeg,
+      title={MEEG and AT-DGNN: Advancing EEG Emotion Recognition with Music and Graph Learning}, 
+      author={Minghao Xiao and Zhengxi Zhu and Wenyu Wang and Meixia Qu},
+      year={2024},
+      eprint={2407.05550},
+      archivePrefix={arXiv},
+      primaryClass={cs.HC},
+      url={https://arxiv.org/abs/2407.05550}, 
+}
 ```
