@@ -21,7 +21,6 @@ def set_config():
 
     # Training Process
     parser.add_argument('--fold', type=int, default=10)
-    random_deed = [2048, 3199, 3090, 2524, 3709]
     parser.add_argument('--random-seed', type=int, default=3407)
     parser.add_argument('--max-epoch', type=int, default=200)
     parser.add_argument('--patient', type=int, default=40)  # 早停 最开始为20
@@ -43,10 +42,9 @@ def set_config():
     parser.add_argument('--load-path-final', default='./save/final_model.pth')
     parser.add_argument('--save-model', type=bool, default=True)
     # Model Parameters
-    parser.add_argument('--model', type=str, default='ATDCGN',
-                        choices=['LGGNet', 'ATDCGN', 'EEGNet', 'DeepConvNet', 'ShallowConvNet', 'EEGTCNet',
-                                 'EEGNetClassifier', 'TSception', 'TCNet_Fusion', 'TSception', 'ATCNet', 'RGNN',
-                                 'DGCNN'])
+    parser.add_argument('--model', type=str, default='AT-DGNN',
+                        choices=['AT-DGNN', 'LGGNet', 'EEGNet', 'DeepConvNet', 'ShallowConvNet', 'EEG-TCNet',
+                                 'TSception', 'TCNet-Fusion', 'ATCNet', 'DGCNN'])
     parser.add_argument('--pool', type=int, default=16)
     parser.add_argument('--pool-step-rate', type=float, default=0.25)
     parser.add_argument('--T', type=int, default=64)

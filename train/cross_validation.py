@@ -1,11 +1,14 @@
 import copy
 import datetime
+
+from config.config import *
 from sklearn.model_selection import KFold
-from train_model import *
-from utils import Averager, ensure_path
+from train.train_model import *
+from utils.utils import *
+
 
 ROOT = os.getcwd()
-_, os.environ['CUDA_VISIBLE_DEVICES'] = config.set_config()
+_, os.environ['CUDA_VISIBLE_DEVICES'] = set_config()
 
 
 class CrossValidation:

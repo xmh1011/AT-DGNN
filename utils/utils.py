@@ -5,11 +5,12 @@ import h5py
 import numpy as np
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
 from torch.utils.data import DataLoader
-from prepare_data import *
-from networks import *
-from models import *
+from train.prepare_data import *
+from models.networks import *
+from models.models import *
+from config.config import *
 
-_, os.environ['CUDA_VISIBLE_DEVICES'] = config.set_config()
+_, os.environ['CUDA_VISIBLE_DEVICES'] = set_config()
 
 
 def set_gpu(x):
@@ -80,18 +81,18 @@ def pprint(x):
 
 def get_model(args):
     idx_local_graph = 0
-    if args.model == 'LGGNet' or args.model == 'ATDCGN':
+    if args.model == 'LGGNet' or args.model == 'AT-DGNN':
         idx_local_graph = list(np.array(h5py.File('num_chan_local_graph_{}.hdf'.format(args.graph_type), 'r')['data']))
-    if args.model == 'LGGNet':
-        model = LGGNet(
+    if args.model == 'AT-DGNN':
+        model = ATDGNN(
             num_classes=args.num_class, input_size=args.input_shape,
             sampling_rate=args.target_rate,
             num_T=args.T, out_graph=args.hidden,
             dropout_rate=args.dropout,
             pool=args.pool, pool_step_rate=args.pool_step_rate,
             idx_graph=idx_local_graph)
-    elif args.model == 'ATDCGN':
-        model = ATDCGN(
+    elif args.model == 'LGGNet':
+        model = LGGNet(
             num_classes=args.num_class, input_size=args.input_shape,
             sampling_rate=args.target_rate,
             num_T=args.T, out_graph=args.hidden,
@@ -112,10 +113,10 @@ def get_model(args):
         model = ShallowConvNet(
             n_classes=args.num_class, channels=args.channels,
             nTime=args.input_shape[2], dropout_rate=args.dropout)
-    elif args.model == 'EEGTCNet':
+    elif args.model == 'EEG-TCNet':
         model = EEGTCNet(
             n_classes=args.num_class, in_channels=args.channels, kernLength=int(args.target_rate * 0.25))
-    elif args.model == 'TCNet_Fusion':
+    elif args.model == 'TCNet-Fusion':
         model = TCNet_Fusion(
             input_size=args.input_shape, n_classes=args.num_class, channels=args.channels,
             sampling_rate=args.target_rate)
@@ -124,13 +125,9 @@ def get_model(args):
             input_size=args.input_shape, num_classes=args.num_class, sampling_rate=args.target_rate,
             num_T=args.T, num_S=args.T, hidden=args.hidden, dropout_rate=args.dropout)
     elif args.model == "ATCNet":
-        # kernelSize为采样率的四分之一，和F1重复了
         model = ATCNet(input_size=args.input_shape, n_channel=args.channels, n_classes=args.num_class,
                        eegn_F1=50, eegn_D=2, eegn_kernelSize=50,
                        tcn_depth=2, activation='elu')
-    elif args.model == "RGNN":
-        model = RGNN(input_size=args.input_shape, batch_size=args.batch_size, K=3, num_class=2,
-                     num_hidden=300, dropout=0.5)
     elif args.model == "DGCNN":
         model = DGCNN(input_size=args.input_shape, batch_size=args.batch_size, k_adj=40, num_out=64, nclass=2)
     return model

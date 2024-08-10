@@ -4,10 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import config
-from models import GraphConvolution, Aggregator, PowerLayer
+from config.config import *
+from models.models import GraphConvolution, Aggregator, PowerLayer
 
-_, os.environ['CUDA_VISIBLE_DEVICES'] = config.set_config()
+_, os.environ['CUDA_VISIBLE_DEVICES'] = set_config()
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 

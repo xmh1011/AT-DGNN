@@ -1,25 +1,53 @@
 # AT-DGNN
 
-## MEEG and AT-DGNN: Advancing EEG Emotion Recognition with Music and Graph Learning
+Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
 
-### Abstract
+## Introduction
 
-Recent advances in neuroscience have elucidated the crucial role of coordinated brain region activities during cognitive tasks. To explore the complexity, we introduce the MEEG dataset, a comprehensive multi-modal music-induced electroencephalogram (EEG) dataset and the Attention-based Temporal Learner with Dynamic Graph Neural Network (AT-DGNN), a novel framework for EEG-based emotion recognition. The MEEG dataset captures a wide range of emotional responses to music, enabling an in-depth analysis of brainwave patterns in musical contexts. The AT-DGNN combines an attention-based temporal learner with a dynamic graph neural network (DGNN) to accurately model the local and global graph dynamics of EEG data across varying brain network topology. Our evaluations show that AT-DGNN achieves superior performance, with an accuracy (ACC) of 83.06% in arousal and 85.31% in valence, outperforming state-of-the-art (SOTA) methods on the MEEG dataset. Comparative analyses with traditional datasets like DEAP highlight the effectiveness of our approach and underscore the potential of music as a powerful medium for emotion induction. This study not only advances our understanding of the brain emotional processing, but also enhances the accuracy of emotion recognition technologies in brain-computer interfaces (BCI), leveraging both graph-based learning and the emotional impact of music.
+The MEEG dataset,
+capturing emotional responses to various musical stimuli across different valence and arousal levels,
+enables an in-depth analysis of brainwave patterns within musical contexts.
+We introduce the Attention-based Temporal Learner with Dynamic Graph Neural Network (AT-DGNN),
+a novel framework for EEG emotion recognition.
+By integrating an attention mechanism with a dynamic graph neural network (DGNN),
+the AT-DGNN model captures complex local and global EEG dynamics,
+demonstrating superior performance with accuracy of 83.74% in arousal and 86.01% in valence,
+outperforming current state-of-the-art (SOTA) methods.
 
-### Network
+## Paper
 
-![AT-DGNN](./network.jpg)
+[MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning](https://arxiv.org/abs/2407.05550)
 
-AT-DGNN model consists of two core modules: a feature extraction module and a dynamic graph neural network learning module. The feature extraction module (a) includes a temporal learner, multi-head attention mechanism, and a temporal convolution module. These components effectively harness local features of EEG signals through a sliding window technique, thereby enhancing the model's ability to dynamically extract complex temporal patterns in EEG signals. In the graph learning module (b), the model first employs local filtering layers to segment and filter features from specific brain regions. Subsequently, it utilizes stacked dynamic graph convolutions to learn the intricate interactions between different brain regions, further enhancing AT-DGNN's capability to integrate spatiotemporal features.
+## Network
 
-### Cite
+![AT-DGNN](docs/network.jpg)
+
+The AT-DGNN model comprises two core modules: a feature extraction module (a) and a dynamic graph neural network learning module (b). The feature extraction module consists of a temporal learner, a multi-head attention mechanism, and a temporal convolution module. These components effectively leverage local features of EEG signals through a sliding window technique, thereby enhancing the model's capacity to dynamically extract complex temporal patterns in EEG signals. In the graph-based learning module, the model initially employs local filtering layers to segment and filter features from specific brain regions. Subsequently, the architecture employs three layers of stacked dynamic graph convolutions to capture complex interactions among different brain regions. This structure enhances the AT-DGNN's capacity for integrating temporal features effectively.
+
+## Run
+
+**The source code is totally compatible with DEAP dataset and MEEG dataset.** You can refer to the [get_started](docs/get_started.md) to run the code.
+
+## Dataset
+
+If you are interested in the dataset, you can refer to the [dataset](docs/dataset.md) to download the dataset.
+
+## Results
+
+The results of the AT-DGNN model are shown in the [results](docs/results.md).
+
+## Reference
+
+The other models compared with AT-DGNN and unitized in the source code are listed in the [reference](docs/reference.md). 
+
+## Citation
 
 If you find our work useful, please consider citing our paper:
 
 ```
 @misc{xiao2024meegatdgnnadvancingeeg,
-      title={MEEG and AT-DGNN: Advancing EEG Emotion Recognition with Music and Graph Learning}, 
-      author={Minghao Xiao and Zhengxi Zhu and Wenyu Wang and Meixia Qu},
+      title={MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning}, 
+      author={Minghao Xiao and Zhengxi Zhu and Bin Jiang and Meixia Qu and Wenyu Wang},
       year={2024},
       eprint={2407.05550},
       archivePrefix={arXiv},
@@ -27,3 +55,7 @@ If you find our work useful, please consider citing our paper:
       url={https://arxiv.org/abs/2407.05550}, 
 }
 ```
+
+## Acknowledgement
+
+Some of the source code is originally from [LGGNet](https://github.com/yi-ding-cs/LGG). We appreciate the authors for their contribution.
