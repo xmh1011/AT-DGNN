@@ -48,8 +48,22 @@ python main.py --dataset 'MEEG' --sampling-rate=1000 --target-rate=200 --trial-d
 
 ## Example
 
-You can run this code for example as follows:
+### MEEG
+
+`example/sample_1.dat` is subject 1 of MEEG dataset.
+
+You can run as follows:
 
 ```shell
-python main.py --data-path './example' --dataset 'MEEG' --sampling-rate=1000 --target-rate=200 --trial-duration=59 --input-shape '1,32,800' --subjects=1
+python main.py --data-path './example' --dataset 'MEEG' --sampling-rate=1000 --target-rate=200 --trial-duration=59 --input-shape '1,32,800' --subjects=1 --model 'AT-DGNN'
+```
+
+### DEAP 
+
+`example/s01.dat` is subject 1 of DEAP dataset.
+
+You can run as follows:
+
+```shell
+python main.py --data-path './example' --dataset 'DEAP' --sampling-rate=128 --target-rate=128 --trial-duration=63 --input-shape '1,32,512' --subjects=1 --model 'AT-DGNN'
 ```
