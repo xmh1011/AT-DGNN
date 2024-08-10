@@ -1,7 +1,7 @@
-import _pickle as cPickle
+import pickle as cPickle
 from scipy import signal
 from sklearn.decomposition import FastICA
-from train_model import *
+from train.train_model import *
 from scipy.signal import resample
 import scipy.signal
 from torch.utils.data import Dataset

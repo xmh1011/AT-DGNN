@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Function
-import config
+from config.config import *
 from einops.layers.torch import Rearrange
 import torch.nn.init as init
 from torch_geometric.nn import SGConv, global_add_pool
@@ -14,10 +14,13 @@ from torch_geometric.nn import HeteroConv, GATConv, GCNConv, SAGEConv
 from torch_geometric.utils import trim_to_layer, dense_to_sparse
 import scipy.signal
 
-_, os.environ['CUDA_VISIBLE_DEVICES'] = config.set_config()
+_, os.environ['CUDA_VISIBLE_DEVICES'] = set_config()
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
+# DeepConvNet
+# [Deep learning with convolutional neural networks for EEG decoding and visualization]
+# (https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.23730)
 class DeepConvNet(nn.Module):
     def convBlock(self, inF, outF, droup_rate, kernalSize, *args, **kwargs):
         return nn.Sequential(
@@ -42,10 +45,10 @@ class DeepConvNet(nn.Module):
             Conv2dWithConstraint(inF, outF, kernalSize, max_norm=0.5, *args, **kwargs))
 
     def calculateOutSize(self, model, channels, nTime):
-        '''
+        """
         Calculate the output based on input size.
         model is from nn.Module and inputSize is a array.
-        '''
+        """
         data = torch.rand(1, 1, channels, nTime)
         model.eval()
         out = model(data).shape
@@ -54,8 +57,7 @@ class DeepConvNet(nn.Module):
     def __init__(self, channels, nTime, n_classes=2, droup_rate=0.25, *args, **kwargs):
         super(DeepConvNet, self).__init__()
 
-        kernalSize = (1,
-                      5)  # Please note that the kernel size in the origianl paper is (1, 10), we found when the segment length is shorter than 4s (1s, 2s, 3s) larger kernel size will
+        kernalSize = (1, 5)  # Please note that the kernel size in the origianl paper is (1, 10), we found when the segment length is shorter than 4s (1s, 2s, 3s) larger kernel size will
         # cause network error. Besides using (1, 5) when EEG segment is 4s gives slightly higher ACC and F1 with a smaller model size.
         nFilt_FirstLayer = 25
         nFiltLaterLayer = [25, 50, 100, 200]
@@ -78,6 +80,9 @@ class DeepConvNet(nn.Module):
         return x
 
 
+# ShallowConvNet
+# [Deep Learning with Convolutional Neural Networks for EEG Decoding and Visualization]
+# (https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.23730)
 class ShallowConvNet(nn.Module):
     def convBlock(self, inF, outF, droup_rate, kernalSize, *args, **kwargs):
         return nn.Sequential(
@@ -96,10 +101,10 @@ class ShallowConvNet(nn.Module):
         )
 
     def calculateOutSize(self, channels, nTime):
-        '''
+        """
         Calculate the output based on input size.
         model is from nn.Module and inputSize is a array.
-        '''
+        """
         data = torch.rand(1, 1, channels, nTime)
         block_one = self.firstLayer
         avg = self.avgpool
@@ -161,18 +166,19 @@ class EEGNetModule(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
 
     def forward(self, x):
-        # 定义前向传播
-        # (64, 1, 32, 800)
-        x = self.batchnorm1(self.conv1(x))  # (64,8,32,800)
-        x = self.activation(self.batchnorm2(self.depthwiseConv(x)))  # (64,16,1,800)
-        x = self.dropout1(self.avg_pool1(x))  # (64,16,1,200)
+        x = self.batchnorm1(self.conv1(x))
+        x = self.activation(self.batchnorm2(self.depthwiseConv(x)))
+        x = self.dropout1(self.avg_pool1(x))
         x = self.separableConv(x)
         x = self.conv2(x)
         x = self.activation(self.batchnorm3(x))
-        x = self.dropout2(self.avg_pool2(x))  # (64,16,1,25)
+        x = self.dropout2(self.avg_pool2(x))
         return x
 
 
+# EEGNet
+# [EEGNet: A compact convolutional neural network for EEG-based brain–computer interfaces]
+# (https://iopscience.iop.org/article/10.1088/1741-2552/aace8c/meta?casa_token=lv6qPlB_YWgAAAAA:9c1FVN1Co6ae3vT6bjTh4VctC1sJLQPbv7uES2QtElX6JoAD2ICg4tndyvhaciMRSch51He_CszifyM0v1ZjBgp51WIW)
 class EEGNet(nn.Module):
     def __init__(self, n_classes, input_size, sampling_rate, F1=8, kernLength=64, D=2, channels=32, dropout=0.25):
         super(EEGNet, self).__init__()
@@ -190,11 +196,9 @@ class EEGNet(nn.Module):
         self.dense = nn.Linear(self.F2 * math.ceil(self.T / 32), n_classes)  # 这里T/32是因为有两次池化，每次都是T减少4倍
 
     def forward(self, x):
-        # (64,1,32,800)
         x = self.EEGNet_sep(x)
-        # (64,16,1,25)
         # 分类器
-        x = self.flatten(x)  # (64,400)
+        x = self.flatten(x)
         x = self.dense(x)
         return F.log_softmax(x, dim=1)
 
@@ -329,6 +333,9 @@ class EEGTCNet(nn.Module):
         return x
 
 
+# TCNet_Fusion
+# [Electroencephalography-based motor imagery classification using temporal convolutional network fusion]
+# (https://www.sciencedirect.com/science/article/abs/pii/S1746809421004237)
 class TCNet_Fusion(nn.Module):
     def __init__(self, input_size, n_classes, channels, sampling_rate, kernel_s=3,
                  dropout=0.3, F1=24, D=2, dropout_eeg=0.3, layers=1, filt=12, activation='elu'):
@@ -354,7 +361,6 @@ class TCNet_Fusion(nn.Module):
     def get_size_temporal(self, input_size):
         data = torch.randn((1, input_size[0], input_size[1], input_size[2]))
         x = self.EEGNet_sep(data)
-        # (1,48,1,25)
         eeg_output = torch.squeeze(x, 2)
         for blk in self.tcn_blocks:
             tcn_output = blk(eeg_output)
@@ -396,6 +402,9 @@ class PowerLayer(nn.Module):
         return torch.log(self.pooling(x.pow(2)))
 
 
+# LGGNet
+# [LGGNet: Learning from local-global-graph representations for brain–computer interface]
+# (https://ieeexplore.ieee.org/abstract/document/10025569)
 class LGGNet(nn.Module):
     def temporal_learner(self, in_chan, out_chan, kernel, pool, pool_step_rate):
         return nn.Sequential(
@@ -553,6 +562,9 @@ class LGGNet(nn.Module):
         return loss
 
 
+# TSception
+# [Tsception: a deep learning framework for emotion detection using EEG]
+# (https://ieeexplore.ieee.org/abstract/document/9206750/)
 class TSception(nn.Module):
     def conv_block(self, in_chan, out_chan, kernel, step, pool):
         return nn.Sequential(
@@ -653,12 +665,6 @@ class GraphConvolution(nn.Module):
         else:
             self.register_parameter('bias', None)
 
-    def reset_parameters(self):
-        stdv = 1. / math.sqrt(self.weight.size(1))
-        self.weight.data.uniform_(-stdv, stdv)
-        if self.bias is not None:
-            self.bias.data.uniform_(-stdv, stdv)
-
     def forward(self, x, adj):
         output = torch.matmul(x, self.weight) - self.bias
         output = F.relu(torch.matmul(adj, output))
@@ -720,6 +726,9 @@ class ATC_Conv(nn.Module):
         return x
 
 
+# ATCNet
+# [Physics-informed attention temporal convolutional network for EEG-based motor imagery classification]
+# (https://ieeexplore.ieee.org/abstract/document/9852687/)
 class ATCNet(nn.Module):
     def __init__(self, input_size, n_channel, n_classes, n_windows=8,
                  eegn_F1=24, eegn_D=2, eegn_kernelSize=50, eegn_poolSize=8, eegn_dropout=0.3, num_heads=2,
@@ -818,40 +827,6 @@ class MultiHeadSelfAttention(nn.Module):
         return output
 
 
-class RGNN(nn.Module):
-    def __init__(self, input_size, batch_size, K, num_class, num_hidden=30, dropout=0.3):
-        super(RGNN, self).__init__()
-        self.conv = SGConv(input_size[2], num_hidden, K)
-        self.ln1 = nn.LayerNorm(num_hidden)  # 使用LayerNorm
-        self.fc = nn.Linear(num_hidden, num_class)
-        self.dropout = dropout
-        self.num_nodes = input_size[1]
-        self.batch_size = batch_size
-        self.edge_index = None
-        self.register_parameter('edge_weight', nn.Parameter(torch.zeros((self.num_nodes * self.num_nodes,))))
-
-    def forward(self, x):
-        x = x.squeeze(1)
-        if self.edge_index is None:
-            processor = AdjacencyProcessor()
-            self.edge_index, weight = processor.process_batch(x)
-            self.edge_weight = nn.Parameter(weight)
-
-        x = self.conv(x, self.edge_index, self.edge_weight)
-        x = self.ln1(x)  # Apply BatchNorm
-        x = F.sigmoid(x)
-
-        # # 将每个batch看作来自不同的图，报错：RuntimeError: The expanded size of the tensor (32) must match the existing size (2048) at non-singleton dimension 1.  Target sizes: [64, 32, 300].  Tensor sizes: [1, 2048, 1]
-        x = global_add_pool(x, batch=None)
-
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.fc(x)
-        out = F.softmax(x, dim=1)
-        out = out.squeeze(1)
-
-        return out
-
-
 class AdjacencyProcessor:
     def __init__(self, device=DEVICE):
         self.device = device
@@ -920,34 +895,6 @@ class AdjacencyProcessor:
         return edge_index, edge_weight
 
 
-class DynamicGraphConv(nn.Module):
-
-    def __init__(self, num_in, num_out, bias=False):
-
-        super(DynamicGraphConv, self).__init__()
-
-        self.num_in = num_in
-        self.num_out = num_out
-        # self.weight = nn.Parameter(torch.FloatTensor(num_in, num_out).cuda())   #Pytorch nn.Parameter() 创建模型可训练参数  https://blog.csdn.net/hxxjxw/article/details/107904012
-        # torch.FloatTensor(a,b)   随机生成aXb格式的tensor
-
-        self.weight = nn.Parameter(torch.FloatTensor(num_in, num_out))
-        nn.init.xavier_normal_(self.weight, gain=1.414)  # 大致就是使可训练参数服从正态分布
-        self.bias = None
-        if bias:
-            # self.bias = nn.Parameter(torch.FloatTensor(num_out).cuda())
-            self.bias = nn.Parameter(torch.FloatTensor(num_out))
-            nn.init.zeros_(self.bias)  # 有偏置 则置为0
-
-    def forward(self, x, adj):
-        out = torch.matmul(adj, x)  # 矩阵/向量 乘法
-        out = torch.matmul(out, self.weight)
-        if self.bias is not None:
-            return out + self.bias
-        else:
-            return out
-
-
 class Linear(nn.Module):
     def __init__(self, in_features, out_features, bias=True):
         super(Linear, self).__init__()
@@ -966,7 +913,7 @@ class Chebynet(nn.Module):
         self.K = K
         self.gc1 = nn.ModuleList()  # https://zhuanlan.zhihu.com/p/75206669
         for i in range(K):
-            self.gc1.append(DynamicGraphConv(xdim[2], num_out))
+            self.gc1.append(GraphConvolution(xdim[2], num_out))
 
     def generate_cheby_adj(self, A, K, device):
         support = []
@@ -995,24 +942,21 @@ class Chebynet(nn.Module):
         return result
 
 
+# DGCNN
+# [EEG emotion recognition using dynamical graph convolutional neural networks]
+# (https://ieeexplore.ieee.org/abstract/document/8320798)
 class DGCNN(nn.Module):
     def __init__(self, input_size, batch_size, k_adj, num_out=64, nclass=2):
-        # xdim: (batch_size*num_nodes*num_features_in)
-        # k_adj: num_layers
-        # num_out: num_features_out
         super(DGCNN, self).__init__()
         self.batch_size = batch_size
         xdim = [batch_size] + [32, 5]
-        # xdim.pop(1)
         self.K = k_adj
         self.layer1 = Chebynet(xdim, k_adj, num_out)
         self.BN1 = nn.BatchNorm1d(xdim[2])  # 对第二维（第一维为batch_size)进行标准化
         self.fc1 = Linear(xdim[1] * num_out, 32)
-        # self.fc2=Linear(64, 32)
-        self.fc3 = Linear(32, 8)
-        self.fc4 = Linear(8, nclass)
+        self.fc2 = Linear(32, 8)
+        self.fc3 = Linear(8, nclass)
         self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]).cuda())
-        # self.A = nn.Parameter(torch.FloatTensor(xdim[1], xdim[1]))
         nn.init.xavier_normal_(self.A)
 
     def normalize_A(self, A, symmetry=False):
@@ -1037,8 +981,6 @@ class DGCNN(nn.Module):
         result = self.layer1(x, L)
         result = result.reshape(x.shape[0], -1)
         result = F.relu(self.fc1(result))
-        # result=F.relu(self.fc2(result))
-        result = F.relu(self.fc3(result))
-        result = self.fc4(result)
+        result = F.relu(self.fc2(result))
+        result = self.fc3(result)
         return result
-

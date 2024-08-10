@@ -1,8 +1,9 @@
-from cross_validation import *
-from prepare_data import *
+from config.config import *
+from train.cross_validation import *
+from train.prepare_data import *
 
 if __name__ == '__main__':
-    args, _ = config.set_config()
+    args, _ = set_config()
     sub_to_run = np.arange(args.subjects)
     pd = PrepareData(args)
     pd.run(sub_to_run, split=True, expand=True)
