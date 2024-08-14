@@ -26,19 +26,11 @@ The AT-DGNN model comprises two core modules: a feature extraction module (a) an
 
 ## Run
 
-**The source code is totally compatible with DEAP dataset and MEEG dataset.** You can refer to the [get_started](docs/get_started.md) to run the code.
+**The source code is totally compatible with DEAP dataset and MEEG dataset.** You can refer to the [run](docs/run.md) to run the code.
 
 ## Dataset
 
 If you are interested in the dataset, you can refer to the [dataset](docs/dataset.md) to download the dataset.
-
-## Results
-
-The results of the AT-DGNN model are shown in the [results](docs/results.md).
-
-## Reference
-
-The other models compared with AT-DGNN and unitized in the source code are listed in the [reference](docs/reference.md). 
 
 ## Citation
 
@@ -58,4 +50,10 @@ If you find our work useful, please consider citing our paper:
 
 ## Acknowledgement
 
+The music for introducing the emotional state of the participants in the MEEG dataset is provided by [Rui Zhang Prof.](https://www.art.sdu.edu.cn/info/1499/14819.html), Shandong University, Department of Music.
+
 Some of the source code is originally from [LGGNet](https://github.com/yi-ding-cs/LGG). We appreciate the authors for their contribution.
+
+## Reference
+
+The other models compared with AT-DGNN and unitized in the source code are listed in the [reference](docs/reference.md). 
