@@ -45,7 +45,7 @@ The other models compared with AT-DGNN and unitized in the source code are liste
 If you find our work useful, please consider citing our paper:
 
 ```
-@misc{xiao2024meegatdgnnadvancingeeg,
+@misc{xiao2024meegatdgnnimprovingeeg,
       title={MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning}, 
       author={Minghao Xiao and Zhengxi Zhu and Bin Jiang and Meixia Qu and Wenyu Wang},
       year={2024},
