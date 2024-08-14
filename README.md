@@ -50,7 +50,7 @@ If you find our work useful, please consider citing our paper:
 
 ## Acknowledgement
 
-The music for introducing the emotional state of the participants in the MEEG dataset is provided by [Rui Zhang Prof.](https://www.art.sdu.edu.cn/info/1499/14819.html), Shandong University, Department of Music.
+The music for introducing the emotional state of the participants in the MEEG dataset is provided by [Rui Zhang Prof.](https://www.art.sdu.edu.cn/info/1499/14819.htm), Shandong University, Department of Music.
 
 Some of the source code is originally from [LGGNet](https://github.com/yi-ding-cs/LGG). We appreciate the authors for their contribution.
 
