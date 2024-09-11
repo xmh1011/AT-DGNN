@@ -1,5 +1,7 @@
 # AT-DGNN
 
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/meeg-and-at-dgnn-advancing-eeg-emotion/eeg-emotion-recognition-on-meeg)](https://paperswithcode.com/sota/eeg-emotion-recognition-on-meeg?p=meeg-and-at-dgnn-advancing-eeg-emotion)
+
 Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
 
 ## Introduction
