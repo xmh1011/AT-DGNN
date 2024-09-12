@@ -22,7 +22,7 @@ outperforming current state-of-the-art (SOTA) methods.
 
 ## Network
 
-![AT-DGNN](docs/network.jpg)
+![AT-DGNN](docs/assert/network.jpg)
 
 The AT-DGNN model comprises two core modules: a feature extraction module (a) and a dynamic graph neural network learning module (b). The feature extraction module consists of a temporal learner, a multi-head attention mechanism, and a temporal convolution module. These components effectively leverage local features of EEG signals through a sliding window technique, thereby enhancing the model's capacity to dynamically extract complex temporal patterns in EEG signals. In the graph-based learning module, the model initially employs local filtering layers to segment and filter features from specific brain regions. Subsequently, the architecture employs three layers of stacked dynamic graph convolutions to capture complex interactions among different brain regions. This structure enhances the AT-DGNN's capacity for integrating temporal features effectively.
 
@@ -33,6 +33,10 @@ The AT-DGNN model comprises two core modules: a feature extraction module (a) an
 ## Dataset
 
 If you are interested in the dataset, you can refer to the [dataset](docs/dataset.md) to download the dataset.
+
+## Visualization
+
+The visualization of the EEG signals can be found in the [visualization](docs/visualization.md).
 
 ## Citation
 
