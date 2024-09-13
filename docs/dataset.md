@@ -19,7 +19,7 @@ Please provide detailed information as requested below. Incomplete forms may del
 
 1. **Complete the Form**: Fill in all the fields in the form with accurate and up-to-date information.
 2. **Save the Form**: Once completed, save the form in a suitable format (e.g., PDF or DOCX).
-3. **Email the Form**: Attach the saved form to an email and send it to the provided email address: [jiangbin@sdu.edu.cn](mailto:jiangbin@sdu.edu.cn).
+3. **Email the Form**: Attach the saved form to an email and send it to the provided email address: [xmh001011@gmail.com](mailto:xmh001011@gmail.com).
 4. **Subject Line**: Please use "Dataset Application - [Your Full Name]" as the subject of your email to help in quick identification and processing.
 5. **Wait for Response**: After sending the form, please wait for a response. The review process may take some time, and you will be contacted once your application is reviewed.
 
