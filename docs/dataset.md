@@ -1,6 +1,6 @@
 # Dataset Application Form
 
-If you are interested in the dataset, please fill out the form below and send it to jiangbin@sdu.edu.cn to request access to the dataset. Ensure that all fields are completed accurately to facilitate the review process.
+If you are interested in the dataset, please fill out the form below and send it to [xmh001011@gmail.com](mailto:xmh001011@gmail.com) to request access to the dataset. Ensure that all fields are completed accurately to facilitate the review process.
 
 ## Application Details
 
