@@ -52,26 +52,21 @@ For other parameters, you can refer to the [params](./params.md) file.
 
 ## Example
 
-Since GitHub limits uploading files larger than 100MB, we used the `gitlfs` tool to upload sample data for MEEG and DEAP datasets. If you want to run our code on the sample data, we highly recommend using `git` and `gitlfs` to clone our code and download the sample data.
-
-Here is the step to clone our code and download the sample data:
-
-- Install `git` and `gitlfs` tools.
-    - [git](https://git-scm.com/)
-    - [git-lfs](https://git-lfs.github.com/)
 - Clone our code.
   ```shell
   git clone https://github.com/xmh1011/AT-DGNN.git
+  cd AT-DGNN
   ```
-- Download the sample data.
+- Unzip the data file.
   ```shell
-  git lfs install
-  ```
-  ```shell
-  git lfs pull
+  cd example
+  tar -xvzf s01.tar.gz
+  tar -xvzf sample_1.tar.gz
   ```
 
-After downloading the sample data, you can run the code as follows.
+`example/sample_1.dat` is subject 1 of MEEG dataset. `example/s01.dat` is subject 1 of DEAP dataset.
+
+After unzipping the sample data, you can run the code as follows.
 
 ### MEEG
 
