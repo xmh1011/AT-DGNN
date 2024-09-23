@@ -6,9 +6,9 @@ There is our sample data in the [example](../example) directory. You can refer t
 
 Since the paper is under review and has not been officially accepted, we cannot provide you with the complete dataset for the time being. If you have questions about the dataset or the code, feel free to email me. I'll try my best to help you out. Waiting for the paper to be accepted, we will release the dataset and let you know ASAP. Thank you for your attention. I hope we can keep in touch and communicate in time if there are any questions.
 
-If you like, you can leave your email [here](https://github.com/xmh1011/AT-DGNN/issues/13), if this article is accepted, we will email you ASAP.
+If you like, you can leave your email [here](https://github.com/xmh1011/AT-DGNN/issues/13) or email to me at [xmh001011@gmail.com](mailto:xmh001011@gmail.com), if this article is accepted, we will email you ASAP.
 
-If you have any question about our code, welcome to email me at [xmh001011@gmail.com](mailto:xmh001011@gmail.com).
+If you have any question about our code and dataset, welcome to email me.
 
 ## Examples
 
