@@ -33,7 +33,7 @@ The EEG signals of LVLA are visualized in the following figure.
 You can reproduce the visualization results by running the following command.
 
 ```bash
-cd example
+cd ../example
 ```
 
 ```bash
