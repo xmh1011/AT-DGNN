@@ -36,18 +36,17 @@ If you are interested in the dataset, you can refer to the [dataset](docs/datase
 
 ## Models 📕
 
-These models are implemented in the code with our framework.
-
-- LGGNet [LGGNet: Learning from local-global-graph representations for brain–computer interface](https://ieeexplore.ieee.org/abstract/document/10025569)
-- EEGNet [EEGNet: A compact convolutional neural network for EEG-based brain–computer interfaces](https://iopscience.iop.org/article/10.1088/1741-2552/aace8c/meta?casa_token=lv6qPlB_YWgAAAAA:9c1FVN1Co6ae3vT6bjTh4VctC1sJLQPbv7uES2QtElX6JoAD2ICg4tndyvhaciMRSch51He_CszifyM0v1ZjBgp51WIW)
-- DeepConvNet & ShallowConvNet [Deep learning with convolutional neural networks for EEG decoding and visualization](https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.23730)
-- TSception [Tsception: a deep learning framework for emotion detection using EEG](https://ieeexplore.ieee.org/abstract/document/9206750/)
-- EEG-TCNet [EEG-TCNet: An accurate temporal convolutional network for embedded motor-imagery brain--machine interfaces](https://ieeexplore.ieee.org/abstract/document/9283028)
-- TCN-Fusion [Electroencephalography-based motor imagery classification using temporal convolutional network fusion](https://www.sciencedirect.com/science/article/abs/pii/S1746809421004237)
-- ATCNet [Physics-informed attention temporal convolutional network for EEG-based motor imagery classification](https://ieeexplore.ieee.org/abstract/document/9852687/)
-- DGCNN [EEG emotion recognition using dynamical graph convolutional neural networks](https://ieeexplore.ieee.org/abstract/document/8320798)
-
 These models compared with AT-DGNN and unitized in the source code are listed in the [reference](docs/reference.md). 
+
+- LGGNet
+- EEGNet
+- DeepConvNet
+- ShallowConvNet
+- TSception
+- EEG-TCNet
+- TCN-Fusion
+- ATCNet
+- DGCNN
 
 ## Visualization 📈
 
