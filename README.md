@@ -59,7 +59,7 @@ If you find our work useful, please consider citing our paper:
 ```
 @misc{xiao2024meegatdgnnimprovingeeg,
       title={MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning}, 
-      author={Minghao Xiao and Zhengxi Zhu and Bin Jiang and Meixia Qu and Wenyu Wang},
+      author={Minghao Xiao and Zhengxi Zhu and Kang Xie and Bin Jiang},
       year={2024},
       eprint={2407.05550},
       archivePrefix={arXiv},
