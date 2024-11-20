@@ -32,7 +32,7 @@ The AT-DGNN model comprises two core modules: a feature extraction module (a) an
 
 ## Dataset 📊
 
-If you are interested in the dataset, you can refer to the [dataset](docs/dataset.md) to download the dataset.
+If you are interested in the dataset, you can click [here](https://drive.google.com/drive/folders/1Tabw5sjpFiwy88yP-C-LnunNFrrre9AR?usp=drive_link) to download the dataset.
 
 ## Models 📕
 
