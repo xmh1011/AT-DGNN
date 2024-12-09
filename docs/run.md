@@ -90,4 +90,4 @@ python main.py --data-path './example' --dataset 'DEAP' --sampling-rate=128 --ta
 
 ## Reproduce
 
-If you want to reproduce the results in our paper, you can refer to the [dataset](./dataset.md) to download the dataset. After downloading the dataset, you can run the code as mentioned above.
+If you want to reproduce the results in our paper, you can download the dataset. After downloading the dataset, you can run the code as mentioned above.
