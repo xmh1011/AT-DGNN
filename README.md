@@ -2,7 +2,7 @@
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/meeg-and-at-dgnn-advancing-eeg-emotion/eeg-emotion-recognition-on-meeg)](https://paperswithcode.com/sota/eeg-emotion-recognition-on-meeg?p=meeg-and-at-dgnn-advancing-eeg-emotion)
 
-Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
+[BIBM2024] Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
 
 ## Introduction 📖
 
@@ -32,7 +32,7 @@ The AT-DGNN model comprises two core modules: a feature extraction module (a) an
 
 ## Dataset 📊
 
-If you are interested in the dataset, you can click [here](https://drive.google.com/drive/folders/1Tabw5sjpFiwy88yP-C-LnunNFrrre9AR?usp=drive_link) to download the dataset.
+If you are interested in the MEEG dataset, you can click [here](https://drive.google.com/drive/folders/1Tabw5sjpFiwy88yP-C-LnunNFrrre9AR?usp=drive_link) to download.
 
 ## Models 📕
 
@@ -73,3 +73,7 @@ If you find our work useful, please consider citing our paper:
 The music for introducing the emotional state of the participants in the MEEG dataset is provided by [Rui Zhang Prof.](https://www.art.sdu.edu.cn/info/1499/14819.htm), Shandong University, Department of Music.
 
 Some of the source code is originally from [LGGNet](https://github.com/yi-ding-cs/LGG). We appreciate the authors for their contribution.
+
+## Star ⭐️
+
+If you find our code and dataset useful, we will be appreciate if you can give our repository a star.
