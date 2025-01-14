@@ -2,7 +2,8 @@
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/meeg-and-at-dgnn-advancing-eeg-emotion/eeg-emotion-recognition-on-meeg)](https://paperswithcode.com/sota/eeg-emotion-recognition-on-meeg?p=meeg-and-at-dgnn-advancing-eeg-emotion)
 
-[BIBM2024] Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
+[BIBM2024] MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning
+- Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
 
 ## Introduction 📖
 
@@ -57,14 +58,13 @@ The visualization of the EEG signals can be found in the [visualization](docs/vi
 If you find our work useful, please consider citing our paper:
 
 ```
-@misc{xiao2024meegatdgnnimprovingeeg,
-      title={MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning}, 
-      author={Minghao Xiao and Zhengxi Zhu and Kang Xie and Bin Jiang},
-      year={2024},
-      eprint={2407.05550},
-      archivePrefix={arXiv},
-      primaryClass={cs.HC},
-      url={https://arxiv.org/abs/2407.05550}, 
+@inproceedings{xiao2024meeg,
+  title={MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning},
+  author={Xiao, Minghao and Zhu, Zhengxi and Xie, Kang and Jiang, Bin},
+  booktitle={2024 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)},
+  pages={4201--4208},
+  year={2024},
+  organization={IEEE Computer Society}
 }
 ```
 
