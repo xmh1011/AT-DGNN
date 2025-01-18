@@ -2,6 +2,8 @@
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/meeg-and-at-dgnn-advancing-eeg-emotion/eeg-emotion-recognition-on-meeg)](https://paperswithcode.com/sota/eeg-emotion-recognition-on-meeg?p=meeg-and-at-dgnn-advancing-eeg-emotion)
 
+[<img src="https://api.gitsponsors.com/api/badge/img?id=784522298" height="20">](https://api.gitsponsors.com/api/badge/link?p=boFZ5iA2Y+3luX4VAEBPVcyxTzjMAahEjS92DyVQBSAeQfyQyRUJiz1M2HNCcHRawWODAHvEoVYz0AdtMOnkOQ==)
+
 [BIBM2024] MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning
 - Attention-Based Temporal Learner With Dynamical Graph Neural Network for EEG Emotion Recognition.
 
