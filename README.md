@@ -21,7 +21,7 @@ outperforming current state-of-the-art (SOTA) methods.
 
 ## Paper 📄
 
-[MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning](https://arxiv.org/abs/2407.05550)
+[MEEG and AT-DGNN: Improving EEG Emotion Recognition with Music Introducing and Graph-based Learning](https://ieeexplore.ieee.org/document/10821806)
 
 ## Network 🧠
 
