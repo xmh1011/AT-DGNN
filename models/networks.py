@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from config.config import *
-from models.models import GraphConvolution, Aggregator, PowerLayer
+from models.models import GraphNeuralNetwork, Aggregator, PowerLayer
 
 _, os.environ['CUDA_VISIBLE_DEVICES'] = set_config()
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -84,8 +84,8 @@ class ATDGNN(nn.Module):
         self.aggregate = Aggregator(self.idx)
 
         # Dynamic Graph Convolution Layers
-        # self.dynamic_gcn = DynamicGraphConvolution(size[-1], out_graph)
-        self.dynamic_gcn = StackedDynamicGraphConvolution(size[-1], hidden_features, out_graph, num_layers=3)
+        # self.dynamic_gcn = DynamicGraphNeuralNetwork(size[-1], out_graph)
+        self.dynamic_gcn = StackedDynamicGraphNeuralNetwork(size[-1], hidden_features, out_graph, num_layers=3)
         # 表示全局邻接矩阵。它被定义为浮点型张量，并设置为需要梯度计算（requires_grad=True）
         self.global_adj = nn.Parameter(torch.FloatTensor(self.brain_area, self.brain_area), requires_grad=True)
         # 根据给定的张量的形状和分布进行参数初始化。用来对global_adj进行初始化，采用的是Xavier均匀分布初始化方法。
@@ -146,14 +146,14 @@ class ATDGNN(nn.Module):
         return out
 
 
-class DynamicGraphConvolution(GraphConvolution):
+class DynamicGraphNeuralNetwork(GraphNeuralNetwork):
     """
-    Dynamic Graph Convolution Layer.
-    Extends the GraphConvolution layer with a dynamic adjacency matrix based on feature similarity.
+    Dynamic Graph Neural Network Layer.
+    Extends the GraphNeuralNetwork layer with a dynamic adjacency matrix based on feature similarity.
     """
 
     def __init__(self, in_features, out_features, bias=True):
-        super(DynamicGraphConvolution, self).__init__(in_features, out_features, bias)
+        super(DynamicGraphNeuralNetwork, self).__init__(in_features, out_features, bias)
 
     def forward(self, x, adj=None):
         if adj is None:
@@ -197,18 +197,18 @@ class DynamicGraphConvolution(GraphConvolution):
         return adj
 
 
-class StackedDynamicGraphConvolution(nn.Module):
+class StackedDynamicGraphNeuralNetwork(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, num_layers=3, bias=True):
-        super(StackedDynamicGraphConvolution, self).__init__()
+        super(StackedDynamicGraphNeuralNetwork, self).__init__()
         self.layers = nn.ModuleList()
 
         # First layer
-        self.layers.append(DynamicGraphConvolution(in_features, hidden_features, bias=bias))
+        self.layers.append(DynamicGraphNeuralNetwork(in_features, hidden_features, bias=bias))
         # Hidden layers
         for _ in range(num_layers - 2):
-            self.layers.append(DynamicGraphConvolution(hidden_features, hidden_features, bias=bias))
+            self.layers.append(DynamicGraphNeuralNetwork(hidden_features, hidden_features, bias=bias))
         # Last layer
-        self.layers.append(DynamicGraphConvolution(hidden_features, out_features, bias=bias))
+        self.layers.append(DynamicGraphNeuralNetwork(hidden_features, out_features, bias=bias))
 
     def forward(self, x, adj=None):
         for layer in self.layers:

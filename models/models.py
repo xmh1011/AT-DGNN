@@ -463,7 +463,7 @@ class LGGNet(nn.Module):
         self.bn = nn.BatchNorm1d(self.brain_area)
         self.bn_ = nn.BatchNorm1d(self.brain_area)
         # learn the global network of networks
-        self.GCN = GraphConvolution(size[-1], out_graph)
+        self.GCN = GraphNeuralNetwork(size[-1], out_graph)
 
         self.fc = nn.Sequential(  # 组合神经网络模块
             nn.Dropout(p=dropout_rate),
@@ -649,13 +649,13 @@ class Aggregator():
         return torch.mean(x, dim=dim)
 
 
-class GraphConvolution(nn.Module):
+class GraphNeuralNetwork(nn.Module):
     """
-    Simple GCN layer
+    Simple GNN layer
     """
 
     def __init__(self, in_features, out_features, bias=True):
-        super(GraphConvolution, self).__init__()
+        super(GraphNeuralNetwork, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.weight = nn.Parameter(torch.FloatTensor(in_features, out_features))
@@ -913,7 +913,7 @@ class Chebynet(nn.Module):
         self.K = K
         self.gc1 = nn.ModuleList()  # https://zhuanlan.zhihu.com/p/75206669
         for i in range(K):
-            self.gc1.append(GraphConvolution(xdim[2], num_out))
+            self.gc1.append(GraphNeuralNetwork(xdim[2], num_out))
 
     def generate_cheby_adj(self, A, K, device):
         support = []
